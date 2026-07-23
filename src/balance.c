@@ -1,6 +1,5 @@
 /*
  * balance.c – Kernel Tuning Profile (Balance)
- * Dịch từ balance.txt
  * Cân bằng giữa latency và throughput
  */
 
@@ -20,25 +19,138 @@
 #include <fcntl.h>
 #include <stdint.h>
 
-/* ==================== Định nghĩa hằng số ==================== */
-
 #define LOG_FILE "/data/local/tmp/KernelTuner.log"
-#define MAX_CMD_LEN 1024
-#define MAX_PATH_LEN PATH_MAX
 #define MAX_LINE_LEN 512
+#define MAX_PATH_LEN PATH_MAX
 
-#define SCHED_PERIOD 4000000   // 4ms in nanoseconds
+#define SCHED_PERIOD 4000000
 #define SCHED_TASKS 8
 #define HISPEED_FREQ "4294967295"
 
-// ... (các hàm safe_malloc, safe_free, safe_fclose, safe_snprintf, log_msg, safe_write_file, file_exists giống như budget.c)
+static void safe_fclose(FILE **fp) {
+    if (fp && *fp) {
+        fclose(*fp);
+        *fp = NULL;
+    }
+}
+
+static void log_msg(const char *fmt, ...) {
+    if (!fmt) return;
+    
+    char buffer[MAX_LINE_LEN];
+    char time_str[32];
+    time_t t;
+    struct tm *tm_info;
+    va_list args;
+    FILE *fp = NULL;
+    
+    time(&t);
+    tm_info = localtime(&t);
+    if (!tm_info) {
+        strcpy(time_str, "[??:??:??]");
+    } else {
+        strftime(time_str, sizeof(time_str), "[%H:%M:%S]", tm_info);
+    }
+    
+    va_start(args, fmt);
+    vsnprintf(buffer, sizeof(buffer), fmt, args);
+    va_end(args);
+    buffer[sizeof(buffer) - 1] = '\0';
+    
+    printf("%s %s\n", time_str, buffer);
+    
+    fp = fopen(LOG_FILE, "a");
+    if (fp) {
+        fprintf(fp, "%s %s\n", time_str, buffer);
+        safe_fclose(&fp);
+    }
+}
+
+static int safe_write_file(const char *path, const char *value) {
+    if (!path || !value) return -1;
+    
+    FILE *fp = NULL;
+    struct stat st;
+    int result = -1;
+    mode_t original_mode = 0;
+    char read_buffer[MAX_LINE_LEN] = {0};
+    
+    if (stat(path, &st) != 0) {
+        return -1;
+    }
+    
+    if (!S_ISREG(st.st_mode)) {
+        return -1;
+    }
+    
+    original_mode = st.st_mode & 0777;
+    
+    if (access(path, W_OK) != 0) {
+        chmod(path, original_mode | S_IWUSR);
+    }
+    
+    fp = fopen(path, "w");
+    if (!fp) {
+        log_msg("Failed to open %s for writing", path);
+        goto cleanup;
+    }
+    
+    if (fprintf(fp, "%s\n", value) < 0) {
+        log_msg("Failed to write to %s", path);
+        goto cleanup;
+    }
+    
+    safe_fclose(&fp);
+    
+    fp = fopen(path, "r");
+    if (!fp) {
+        goto cleanup;
+    }
+    
+    if (fgets(read_buffer, sizeof(read_buffer), fp)) {
+        size_t len = strlen(read_buffer);
+        while (len > 0 && (read_buffer[len-1] == '\n' || read_buffer[len-1] == '\r')) {
+            read_buffer[--len] = '\0';
+        }
+        if (strcmp(read_buffer, value) == 0) {
+            result = 0;
+        }
+    }
+    
+cleanup:
+    safe_fclose(&fp);
+    
+    if (original_mode > 0) {
+        chmod(path, original_mode);
+    }
+    
+    return result;
+}
+
+static int safe_snprintf(char *buffer, size_t size, const char *format, ...) {
+    if (!buffer || size == 0) return -1;
+    va_list args;
+    va_start(args, format);
+    int result = vsnprintf(buffer, size, format, args);
+    va_end(args);
+    if (result < 0 || (size_t)result >= size) {
+        buffer[size - 1] = '\0';
+        return -1;
+    }
+    return result;
+}
+
+static int file_exists(const char *path) {
+    if (!path) return 0;
+    struct stat st;
+    return stat(path, &st) == 0;
+}
 
 static void apply_profile(void) {
     char buf[32];
     
     log_msg("========== Applying Balance Profile ==========");
     
-    // --- Kernel parameters ---
     safe_write_file("/proc/sys/kernel/perf_cpu_time_max_percent", "5");
     safe_write_file("/proc/sys/kernel/sched_autogroup_enabled", "1");
     safe_write_file("/proc/sys/kernel/sched_child_runs_first", "1");
@@ -58,7 +170,6 @@ static void apply_profile(void) {
     safe_write_file("/proc/sys/kernel/sched_schedstats", "0");
     safe_write_file("/proc/sys/kernel/printk_devkmsg", "off");
     
-    // --- VM parameters ---
     safe_write_file("/proc/sys/vm/dirty_background_ratio", "10");
     safe_write_file("/proc/sys/vm/dirty_ratio", "30");
     safe_write_file("/proc/sys/vm/dirty_expire_centisecs", "3000");
@@ -68,30 +179,24 @@ static void apply_profile(void) {
     safe_write_file("/proc/sys/vm/swappiness", "100");
     safe_write_file("/proc/sys/vm/vfs_cache_pressure", "100");
     
-    // --- Network parameters ---
     safe_write_file("/proc/sys/net/ipv4/tcp_ecn", "1");
     safe_write_file("/proc/sys/net/ipv4/tcp_fastopen", "3");
     safe_write_file("/proc/sys/net/ipv4/tcp_syncookies", "0");
     
-    // --- sched_features ---
     if (file_exists("/sys/kernel/debug/sched_features")) {
         safe_write_file("/sys/kernel/debug/sched_features", "NEXT_BUDDY");
         safe_write_file("/sys/kernel/debug/sched_features", "TTWU_QUEUE");
     }
     
-    // --- STUNE ---
     if (file_exists("/dev/stune/top-app/schedtune.prefer_idle")) {
         safe_write_file("/dev/stune/top-app/schedtune.prefer_idle", "0");
         safe_write_file("/dev/stune/top-app/schedtune.boost", "1");
     }
     
-    // --- CPU Governor ---
     DIR *dir = opendir("/sys/devices/system/cpu");
     if (dir) {
         struct dirent *ent;
-        char path[MAX_PATH_LEN];
-        char avail[MAX_PATH_LEN];
-        char gov[MAX_PATH_LEN];
+        char path[MAX_PATH_LEN], avail[MAX_PATH_LEN], gov[MAX_PATH_LEN];
         char content[256];
         FILE *fp;
         
@@ -121,7 +226,6 @@ static void apply_profile(void) {
         closedir(dir);
     }
     
-    // --- schedutil tunables ---
     if (file_exists("/sys/devices/system/cpu/cpufreq/policy0/schedutil")) {
         safe_snprintf(buf, sizeof(buf), "%d", SCHED_PERIOD / 1000);
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us", buf);
@@ -133,12 +237,10 @@ static void apply_profile(void) {
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq", HISPEED_FREQ);
     }
     
-    // --- I/O Scheduler ---
     DIR *block_dir = opendir("/sys/block");
     if (block_dir) {
         struct dirent *ent;
-        char queue_path[MAX_PATH_LEN];
-        char sched_path[MAX_PATH_LEN];
+        char queue_path[MAX_PATH_LEN], sched_path[MAX_PATH_LEN];
         char content[256];
         FILE *fp;
         
@@ -180,7 +282,7 @@ static void apply_profile(void) {
     log_msg("========== Balance Profile Applied ==========");
 }
 
-int main(int argc, char **argv) {
+int main(void) {
     log_msg("Kernel Tuner - Balance Profile");
     apply_profile();
     return 0;

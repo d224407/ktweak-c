@@ -1,6 +1,5 @@
 /*
  * budget.c – Kernel Tuning Profile (Budget)
- * Dịch từ budget.txt
  * Tối ưu cho thiết bị cấu hình thấp, tiết kiệm pin
  */
 
@@ -20,34 +19,15 @@
 #include <fcntl.h>
 #include <stdint.h>
 
-/* ==================== Định nghĩa hằng số ==================== */
-
 #define LOG_FILE "/data/local/tmp/KernelTuner.log"
-#define MAX_CMD_LEN 1024
-#define MAX_PATH_LEN PATH_MAX
 #define MAX_LINE_LEN 512
+#define MAX_PATH_LEN PATH_MAX
 
-#define SCHED_PERIOD 5000000  // 5ms in nanoseconds
+#define SCHED_PERIOD 5000000
 #define SCHED_TASKS 5
 #define HISPEED_FREQ "4294967295"
 
 /* ==================== Hàm quản lý bộ nhớ an toàn ==================== */
-
-static void* safe_malloc(size_t size) {
-    if (size == 0) return NULL;
-    void *ptr = malloc(size);
-    if (!ptr) {
-        fprintf(stderr, "ERROR: malloc(%zu) failed\n", size);
-    }
-    return ptr;
-}
-
-static void safe_free(void **ptr) {
-    if (ptr && *ptr) {
-        free(*ptr);
-        *ptr = NULL;
-    }
-}
 
 static void safe_fclose(FILE **fp) {
     if (fp && *fp) {
@@ -56,22 +36,7 @@ static void safe_fclose(FILE **fp) {
     }
 }
 
-/* ==================== Xử lý chuỗi an toàn ==================== */
-
-static int safe_snprintf(char *buffer, size_t size, const char *format, ...) {
-    if (!buffer || size == 0) return -1;
-    va_list args;
-    va_start(args, format);
-    int result = vsnprintf(buffer, size, format, args);
-    va_end(args);
-    if (result < 0 || (size_t)result >= size) {
-        buffer[size - 1] = '\0';
-        return -1;
-    }
-    return result;
-}
-
-/* ==================== Hàm ghi log an toàn ==================== */
+/* ==================== Hàm ghi log ==================== */
 
 static void log_msg(const char *fmt, ...) {
     if (!fmt) return;
@@ -168,6 +133,21 @@ cleanup:
     return result;
 }
 
+/* ==================== Hàm safe_snprintf ==================== */
+
+static int safe_snprintf(char *buffer, size_t size, const char *format, ...) {
+    if (!buffer || size == 0) return -1;
+    va_list args;
+    va_start(args, format);
+    int result = vsnprintf(buffer, size, format, args);
+    va_end(args);
+    if (result < 0 || (size_t)result >= size) {
+        buffer[size - 1] = '\0';
+        return -1;
+    }
+    return result;
+}
+
 /* ==================== Hàm kiểm tra file tồn tại ==================== */
 
 static int file_exists(const char *path) {
@@ -176,14 +156,13 @@ static int file_exists(const char *path) {
     return stat(path, &st) == 0;
 }
 
-/* ==================== Các hàm áp dụng profile ==================== */
+/* ==================== Áp dụng profile ==================== */
 
 static void apply_profile(void) {
     char buf[32];
     
     log_msg("========== Applying Budget Profile ==========");
     
-    // --- Kernel parameters ---
     safe_write_file("/proc/sys/kernel/perf_cpu_time_max_percent", "2");
     safe_write_file("/proc/sys/kernel/sched_autogroup_enabled", "1");
     safe_write_file("/proc/sys/kernel/sched_child_runs_first", "0");
@@ -203,7 +182,6 @@ static void apply_profile(void) {
     safe_write_file("/proc/sys/kernel/sched_schedstats", "0");
     safe_write_file("/proc/sys/kernel/printk_devkmsg", "off");
     
-    // --- VM parameters ---
     safe_write_file("/proc/sys/vm/dirty_background_ratio", "2");
     safe_write_file("/proc/sys/vm/dirty_ratio", "5");
     safe_write_file("/proc/sys/vm/dirty_expire_centisecs", "500");
@@ -213,30 +191,25 @@ static void apply_profile(void) {
     safe_write_file("/proc/sys/vm/swappiness", "100");
     safe_write_file("/proc/sys/vm/vfs_cache_pressure", "100");
     
-    // --- Network parameters ---
     safe_write_file("/proc/sys/net/ipv4/tcp_ecn", "1");
     safe_write_file("/proc/sys/net/ipv4/tcp_fastopen", "3");
     safe_write_file("/proc/sys/net/ipv4/tcp_syncookies", "0");
     
-    // --- sched_features ---
     if (file_exists("/sys/kernel/debug/sched_features")) {
         safe_write_file("/sys/kernel/debug/sched_features", "NEXT_BUDDY");
         safe_write_file("/sys/kernel/debug/sched_features", "NO_TTWU_QUEUE");
     }
     
-    // --- STUNE ---
     if (file_exists("/dev/stune/top-app/schedtune.prefer_idle")) {
         safe_write_file("/dev/stune/top-app/schedtune.prefer_idle", "0");
         safe_write_file("/dev/stune/top-app/schedtune.boost", "0");
     }
     
-    // --- CPU Governor ---
+    // CPU Governor
     DIR *dir = opendir("/sys/devices/system/cpu");
     if (dir) {
         struct dirent *ent;
-        char path[MAX_PATH_LEN];
-        char avail[MAX_PATH_LEN];
-        char gov[MAX_PATH_LEN];
+        char path[MAX_PATH_LEN], avail[MAX_PATH_LEN], gov[MAX_PATH_LEN];
         char content[256];
         FILE *fp;
         
@@ -266,7 +239,6 @@ static void apply_profile(void) {
         closedir(dir);
     }
     
-    // --- schedutil tunables ---
     if (file_exists("/sys/devices/system/cpu/cpufreq/policy0/schedutil")) {
         safe_snprintf(buf, sizeof(buf), "%d", SCHED_PERIOD / 1000);
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us", buf);
@@ -276,12 +248,11 @@ static void apply_profile(void) {
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq", HISPEED_FREQ);
     }
     
-    // --- I/O Scheduler ---
+    // I/O Scheduler
     DIR *block_dir = opendir("/sys/block");
     if (block_dir) {
         struct dirent *ent;
-        char queue_path[MAX_PATH_LEN];
-        char sched_path[MAX_PATH_LEN];
+        char queue_path[MAX_PATH_LEN], sched_path[MAX_PATH_LEN];
         char content[256];
         FILE *fp;
         
@@ -323,9 +294,7 @@ static void apply_profile(void) {
     log_msg("========== Budget Profile Applied ==========");
 }
 
-/* ==================== Main ==================== */
-
-int main(int argc, char **argv) {
+int main(void) {
     log_msg("Kernel Tuner - Budget Profile");
     apply_profile();
     return 0;
