@@ -29,7 +29,7 @@
 
 #define SCHED_PERIOD 5000000  // 5ms in nanoseconds
 #define SCHED_TASKS 5
-#define UINT_MAX "4294967295"
+#define HISPEED_FREQ "4294967295"
 
 /* ==================== Hàm quản lý bộ nhớ an toàn ==================== */
 
@@ -267,15 +267,13 @@ static void apply_profile(void) {
     }
     
     // --- schedutil tunables ---
-    char schedutil_path[MAX_PATH_LEN];
-    safe_snprintf(schedutil_path, sizeof(schedutil_path), "/sys/devices/system/cpu/cpufreq/policy0/schedutil");
-    if (file_exists(schedutil_path)) {
+    if (file_exists("/sys/devices/system/cpu/cpufreq/policy0/schedutil")) {
         safe_snprintf(buf, sizeof(buf), "%d", SCHED_PERIOD / 1000);
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us", buf);
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us", buf);
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/rate_limit_us", buf);
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_load", "99");
-        safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq", UINT_MAX);
+        safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq", HISPEED_FREQ);
     }
     
     // --- I/O Scheduler ---

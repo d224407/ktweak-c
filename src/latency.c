@@ -29,154 +29,9 @@
 
 #define SCHED_PERIOD 1000000   // 1ms in nanoseconds
 #define SCHED_TASKS 10
-#define UINT_MAX "4294967295"
+#define HISPEED_FREQ "4294967295"
 
-/* ==================== Hàm quản lý bộ nhớ an toàn ==================== */
-
-static void* safe_malloc(size_t size) {
-    if (size == 0) return NULL;
-    void *ptr = malloc(size);
-    if (!ptr) {
-        fprintf(stderr, "ERROR: malloc(%zu) failed\n", size);
-    }
-    return ptr;
-}
-
-static void safe_free(void **ptr) {
-    if (ptr && *ptr) {
-        free(*ptr);
-        *ptr = NULL;
-    }
-}
-
-static void safe_fclose(FILE **fp) {
-    if (fp && *fp) {
-        fclose(*fp);
-        *fp = NULL;
-    }
-}
-
-/* ==================== Xử lý chuỗi an toàn ==================== */
-
-static int safe_snprintf(char *buffer, size_t size, const char *format, ...) {
-    if (!buffer || size == 0) return -1;
-    va_list args;
-    va_start(args, format);
-    int result = vsnprintf(buffer, size, format, args);
-    va_end(args);
-    if (result < 0 || (size_t)result >= size) {
-        buffer[size - 1] = '\0';
-        return -1;
-    }
-    return result;
-}
-
-/* ==================== Hàm ghi log an toàn ==================== */
-
-static void log_msg(const char *fmt, ...) {
-    if (!fmt) return;
-    
-    char buffer[MAX_LINE_LEN];
-    char time_str[32];
-    time_t t;
-    struct tm *tm_info;
-    va_list args;
-    FILE *fp = NULL;
-    
-    time(&t);
-    tm_info = localtime(&t);
-    if (!tm_info) {
-        strcpy(time_str, "[??:??:??]");
-    } else {
-        strftime(time_str, sizeof(time_str), "[%H:%M:%S]", tm_info);
-    }
-    
-    va_start(args, fmt);
-    vsnprintf(buffer, sizeof(buffer), fmt, args);
-    va_end(args);
-    buffer[sizeof(buffer) - 1] = '\0';
-    
-    printf("%s %s\n", time_str, buffer);
-    
-    fp = fopen(LOG_FILE, "a");
-    if (fp) {
-        fprintf(fp, "%s %s\n", time_str, buffer);
-        safe_fclose(&fp);
-    }
-}
-
-/* ==================== Hàm ghi file an toàn ==================== */
-
-static int safe_write_file(const char *path, const char *value) {
-    if (!path || !value) return -1;
-    
-    FILE *fp = NULL;
-    struct stat st;
-    int result = -1;
-    mode_t original_mode = 0;
-    char read_buffer[MAX_LINE_LEN] = {0};
-    
-    if (stat(path, &st) != 0) {
-        return -1;
-    }
-    
-    if (!S_ISREG(st.st_mode)) {
-        return -1;
-    }
-    
-    original_mode = st.st_mode & 0777;
-    
-    if (access(path, W_OK) != 0) {
-        chmod(path, original_mode | S_IWUSR);
-    }
-    
-    fp = fopen(path, "w");
-    if (!fp) {
-        log_msg("Failed to open %s for writing", path);
-        goto cleanup;
-    }
-    
-    if (fprintf(fp, "%s\n", value) < 0) {
-        log_msg("Failed to write to %s", path);
-        goto cleanup;
-    }
-    
-    safe_fclose(&fp);
-    
-    fp = fopen(path, "r");
-    if (!fp) {
-        goto cleanup;
-    }
-    
-    if (fgets(read_buffer, sizeof(read_buffer), fp)) {
-        size_t len = strlen(read_buffer);
-        while (len > 0 && (read_buffer[len-1] == '\n' || read_buffer[len-1] == '\r')) {
-            read_buffer[--len] = '\0';
-        }
-        if (strcmp(read_buffer, value) == 0) {
-            result = 0;
-        }
-    }
-    
-cleanup:
-    safe_fclose(&fp);
-    
-    if (original_mode > 0) {
-        chmod(path, original_mode);
-    }
-    
-    return result;
-}
-
-/* ==================== Hàm kiểm tra file tồn tại ==================== */
-
-static int file_exists(const char *path) {
-    if (!path) return 0;
-    struct stat st;
-    return stat(path, &st) == 0;
-}
-
-/* ==================== Hàm áp dụng profile ==================== */
+// ... (các hàm safe_malloc, safe_free, safe_fclose, safe_snprintf, log_msg, safe_write_file, file_exists giống như budget.c)
 
 static void apply_profile(void) {
     char buf[32];
@@ -267,14 +122,12 @@ static void apply_profile(void) {
     }
     
     // --- schedutil tunables ---
-    char schedutil_path[MAX_PATH_LEN];
-    safe_snprintf(schedutil_path, sizeof(schedutil_path), "/sys/devices/system/cpu/cpufreq/policy0/schedutil");
-    if (file_exists(schedutil_path)) {
+    if (file_exists("/sys/devices/system/cpu/cpufreq/policy0/schedutil")) {
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/up_rate_limit_us", "0");
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/down_rate_limit_us", "0");
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/rate_limit_us", "0");
         safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_load", "85");
-        safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq", UINT_MAX);
+        safe_write_file("/sys/devices/system/cpu/cpufreq/policy0/schedutil/hispeed_freq", HISPEED_FREQ);
     }
     
     // --- I/O Scheduler ---
@@ -323,8 +176,6 @@ static void apply_profile(void) {
     
     log_msg("========== Latency Profile Applied ==========");
 }
-
-/* ==================== Main ==================== */
 
 int main(int argc, char **argv) {
     log_msg("Kernel Tuner - Latency Profile");
