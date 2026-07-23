@@ -1,4 +1,4 @@
-name: Build Kernel Tuner
+name: Build
 
 on:
   push:
