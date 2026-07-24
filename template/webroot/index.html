@@ -126,6 +126,19 @@
       padding: 0 16px;
     }
 
+    .banner {
+      margin: 12px 0 16px;
+      border-radius: 20px;
+      overflow: hidden;
+      background: var(--app-surface);
+    }
+    .banner img {
+      width: 100%;
+      max-height: 180px;
+      object-fit: cover;
+      display: block;
+    }
+
     .tab-content {
       display: none;
     }
@@ -462,6 +475,11 @@
 
   <div class="main">
 
+    <!-- Banner GIF -->
+    <div class="banner">
+      <img src="assets/banner.gif" alt="KTweak Banner" />
+    </div>
+
     <!-- Tab 1: Profile -->
     <div id="tab-profile" class="tab-content active">
       <div class="section-title">Chọn Profile</div>
@@ -545,7 +563,7 @@
 
   <script type="module">
     // ============================================================
-    // KTweak WebUI - Full Logic (Fixed)
+    // KTweak WebUI - Full Logic (Fixed path, added GIF)
     // ============================================================
     import { exec as ksuExec, toast } from 'kernelsu';
 
@@ -566,11 +584,10 @@
     let currentProfile = 'budget';
     let translations = {};
 
-    // --- exec helper - FIXED ---
+    // --- exec helper ---
     async function exec(cmd) {
       try {
         const { errno, stdout, stderr } = await ksuExec(cmd);
-        // BUG FIX #1: Better error handling instead of generic "Exit 1" message
         if (errno !== 0) {
           const errorMsg = stderr || `Command failed with exit code ${errno}`;
           throw new Error(errorMsg);
@@ -596,38 +613,27 @@
       addLogLine('Log đã được xóa', 'info');
     }
 
-    // --- Get module path ---
+    // --- Get module path - FIXED: ưu tiên /data/adb/modules ---
     async function getModulePath() {
-      try {
-        const path = await exec(`cat ${MODULE_PATH_FILE} 2>/dev/null`);
-        if (path) return path.trim();
-      } catch (e) {
-        // Silent failure is OK for fallback
-      }
-
-      // Check common candidate locations in order. This fixes cases where the module
-      // may be installed under /data/adb/module, /data/adb/module_update, or the
-      // more common /data/adb/modules/KTweak path.
+      // Kiểm tra các vị trí có thể có module
       const candidates = [
+        '/data/adb/modules/KTweak',      // ưu tiên nhất
         '/data/adb/module/KTweak',
-        '/data/adb/module_update/KTweak',
-        '/data/adb/modules/KTweak'
+        '/data/adb/module_update/KTweak'
       ];
-
       for (const c of candidates) {
         try {
           const res = await exec(`test -d ${c} && echo ${c} || true`);
-          if (res && res.trim()) return res.trim();
-        } catch (e) {
-          // ignore and try next
-        }
+          if (res && res.trim()) {
+            return res.trim();
+          }
+        } catch (e) { /* ignore */ }
       }
-
-      // As a last resort, return the most common path
+      // Fallback
       return '/data/adb/modules/KTweak';
     }
 
-    // --- Find binary - FIXED ---
+    // --- Find binary ---
     async function findBinary(profile) {
       try {
         const modPath = await getModulePath();
@@ -642,7 +648,6 @@
         const binName = `ktweak_${profile}${suffix}`;
         const fullPath = `${modPath}/system/bin/${binName}`;
         
-        // BUG FIX #3: Check if file exists with proper error handling
         try {
           await exec(`test -f ${fullPath}`);
         } catch (e) {
@@ -662,7 +667,6 @@
           currentProfile = content.trim();
         }
       } catch (e) {
-        // BUG FIX #4: Graceful fallback
         currentProfile = 'budget';
         try {
           await exec(`echo "budget" > ${CURRENT_PROFILE_FILE}`);
@@ -679,7 +683,7 @@
       });
     }
 
-    // --- Apply profile - FIXED ---
+    // --- Apply profile ---
     async function applyProfile(profile) {
       addLogLine(`Đang áp dụng profile: ${profile}`, 'info');
       applyBtn.disabled = true;
@@ -695,13 +699,11 @@
         addLogLine(`✅ Profile ${profile} đã được áp dụng!`, 'success');
         if (result) addLogLine(`Output: ${result}`, 'info');
 
-        // BUG FIX #5: Use safer echo syntax
         await exec(`echo '${profile}' > ${CURRENT_PROFILE_FILE}`);
         currentProfile = profile;
         updateUI(profile);
 
       } catch (e) {
-        // BUG FIX #6: Show actual error message instead of generic "Exit 1"
         const errorMsg = e.message || e.toString();
         addLogLine(`❌ Lỗi: ${errorMsg}`, 'error');
         console.error('Apply profile error:', e);
@@ -719,12 +721,11 @@
       document.querySelector(`.nav-button[data-target="${tabId}"]`).classList.add('active');
     }
 
-    // --- Language - FIXED ---
+    // --- Language ---
     async function loadLanguage(lang) {
       try {
         const resp = await fetch(`assets/lang/${lang}.json`);
         if (!resp.ok) {
-          // BUG FIX #7: Better fallback handling for missing language files
           if (lang !== 'en') {
             addLogLine(`Language file not found for ${lang}, falling back to English`, 'info');
             return loadLanguage('en');
@@ -773,7 +774,7 @@
       });
     }
 
-    // --- Init - FIXED ---
+    // --- Init ---
     async function init() {
       try {
         initLanguage();
@@ -809,11 +810,9 @@
         addLogLine(`Profile hiện tại: ${currentProfile}`, 'info');
 
       } catch (initError) {
-        // BUG FIX #8: Handle init errors gracefully
         console.error('Initialization error:', initError);
         addLogLine(`⚠️ Init error: ${initError.message}`, 'error');
       } finally {
-        // BUG FIX #9: Always hide loading overlay
         loadingOverlay.style.opacity = '0';
         setTimeout(() => {
           if (loadingOverlay.parentNode) {
