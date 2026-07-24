@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="vi" id="html-root">
+<html lang="vi">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
@@ -57,61 +57,111 @@
       --app-outline: var(--outline, #938f99);
       --app-outline-variant: rgba(128, 128, 128, 0.2);
       --overlay-light: rgba(128, 128, 128, 0.1);
-      --overlay-medium: rgba(128, 128, 128, 0.15);
       --radius: 18px;
     }
 
     * {
-      margin: 0; padding: 0;
+      margin: 0;
+      padding: 0;
       box-sizing: border-box;
       -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
       user-select: none;
     }
 
     body {
-      margin: 0;
       font-family: "SF Pro Display", "Roboto", sans-serif;
       background-color: var(--app-bg);
       color: var(--app-on-surface);
-      padding: 0; min-height: 100vh;
+      padding: 0;
+      min-height: 100vh;
       padding-top: calc(96px + var(--window-inset-top, 0px));
       padding-bottom: calc(120px + var(--window-inset-bottom, 0px));
     }
 
     header {
-      position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
       height: calc(80px + var(--window-inset-top, 0px));
       padding: var(--window-inset-top, 0px) 24px 0 24px;
-      display: flex; align-items: center; justify-content: space-between;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
       background-color: transparent;
     }
     header::before {
-      content: ""; position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: var(--app-bg); opacity: 0.85;
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--app-bg);
+      opacity: 0.85;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
       z-index: -1;
     }
 
     .header-title {
-      font-size: 28px; font-weight: 800; color: var(--app-on-surface);
-      display: flex; align-items: center; gap: 14px; letter-spacing: -0.6px;
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--app-on-surface);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      letter-spacing: -0.6px;
     }
-    .header-title .material-symbols-outlined { font-size: 28px; color: var(--app-primary); flex-shrink: 0; }
+    .header-title .material-symbols-outlined {
+      font-size: 28px;
+      color: var(--app-primary);
+      flex-shrink: 0;
+    }
 
-    .main { max-width: 500px; margin: 0 auto; padding: 0 16px; }
+    .main {
+      max-width: 500px;
+      margin: 0 auto;
+      padding: 0 16px;
+    }
 
-    .tab-content { display: none; }
-    .tab-content.active { display: block; animation: fadeIn 0.3s ease; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(5px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
 
     /* === Card chọn profile === */
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 16px 0 4px;
+    }
+    .section-desc {
+      font-size: 14px;
+      color: var(--app-on-surface-variant);
+      opacity: 0.7;
+      margin-bottom: 12px;
+    }
+
     .profile-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
-      margin: 16px 0;
+      margin: 12px 0 16px;
     }
     .profile-card {
       background-color: var(--app-surface);
@@ -171,7 +221,7 @@
       font-weight: 700;
       border: none;
       cursor: pointer;
-      margin-top: 16px;
+      margin-top: 4px;
       transition: all 0.3s ease;
     }
     .apply-btn:active {
@@ -184,11 +234,17 @@
     }
 
     /* === Output tab === */
+    .output-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 16px 0 8px;
+    }
     .output-box {
       background-color: var(--app-surface);
       border-radius: 24px;
       padding: 16px;
-      margin-top: 16px;
+      margin-top: 4px;
       max-height: 400px;
       overflow-y: auto;
       font-family: monospace;
@@ -198,12 +254,18 @@
       color: var(--app-on-surface-variant);
     }
     .output-box .log-line {
-      padding: 2px 0;
+      padding: 4px 0;
       border-bottom: 1px solid var(--overlay-light);
     }
-    .output-box .log-line.success { color: #69f0ae; }
-    .output-box .log-line.error { color: #ff5252; }
-    .output-box .log-line.info { color: var(--app-on-surface); }
+    .output-box .log-line.success {
+      color: #69f0ae;
+    }
+    .output-box .log-line.error {
+      color: #ff5252;
+    }
+    .output-box .log-line.info {
+      color: var(--app-on-surface);
+    }
 
     .clear-log-btn {
       background: none;
@@ -214,7 +276,9 @@
       font-size: 13px;
       opacity: 0.6;
     }
-    .clear-log-btn:active { opacity: 1; }
+    .clear-log-btn:active {
+      opacity: 1;
+    }
 
     /* === Bottom nav === */
     .bottom-navigation {
@@ -257,221 +321,452 @@
       color: var(--app-on-primary-container);
       opacity: 1;
     }
-    .nav-button .nav-icon { font-size: 24px; }
+    .nav-button .nav-icon {
+      font-size: 24px;
+    }
     .nav-button .nav-label {
       font-size: 13px;
       font-weight: 600;
       margin-left: 4px;
       display: none;
     }
-    .nav-button.active .nav-label { display: inline-block; }
+    .nav-button.active .nav-label {
+      display: inline-block;
+    }
 
     /* === Loading === */
     #loading-overlay {
-      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
       background-color: var(--app-bg);
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       z-index: 9999;
       color: var(--app-on-surface);
       font-size: 18px;
       font-weight: 600;
     }
 
-    /* Responsive */
+    /* === Icon button === */
+    .icon-button {
+      background: transparent;
+      border: none;
+      color: var(--app-on-surface);
+      cursor: pointer;
+      padding: 8px;
+      border-radius: 50%;
+      transition: background 0.2s;
+    }
+    .icon-button:active {
+      background-color: var(--overlay-light);
+    }
+
+    /* === Dialog === */
+    .dialog-scrim {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      align-items: center;
+      justify-content: center;
+    }
+    .dialog-scrim.active {
+      display: flex;
+    }
+    .dialog-container {
+      background: var(--app-surface);
+      border-radius: 28px;
+      padding: 24px;
+      max-width: 320px;
+      width: 85%;
+    }
+    .dialog-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .dialog-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--app-on-surface);
+    }
+    .dialog-close {
+      background: none;
+      border: none;
+      color: var(--app-on-surface);
+      cursor: pointer;
+      font-size: 24px;
+    }
+    .lang-option {
+      padding: 12px;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      color: var(--app-on-surface);
+      transition: background 0.2s;
+    }
+    .lang-option:active {
+      background: var(--overlay-light);
+    }
+    .lang-option.selected {
+      background-color: var(--app-primary-container);
+      color: var(--app-on-primary-container);
+    }
+    .lang-option .check-icon {
+      display: none;
+    }
+    .lang-option.selected .check-icon {
+      display: inline;
+    }
+
     @media (max-width: 400px) {
-      .profile-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
-      .profile-card { padding: 16px 12px; }
-      .profile-card .icon { font-size: 28px; }
-      .profile-card .name { font-size: 14px; }
+      .profile-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .profile-card {
+        padding: 16px 12px;
+      }
+      .profile-card .icon {
+        font-size: 28px;
+      }
+      .profile-card .name {
+        font-size: 14px;
+      }
     }
   </style>
 </head>
 <body>
 
-<header>
-  <div class="header-title">
-    <span class="material-symbols-outlined">tune</span>
-    KTweak
-  </div>
-  <button class="icon-button" id="btn-language" style="background:transparent;border:none;color:var(--app-on-surface);cursor:pointer;">
-    <span class="material-symbols-outlined">translate</span>
-  </button>
-</header>
-
-<div class="main">
-  <!-- Tab 1: Chọn Profile -->
-  <div id="tab-profile" class="tab-content active">
-    <div style="margin: 16px 0 8px;">
-      <div style="font-size:20px;font-weight:700;" data-i18n="tabProfileTitle">Chọn Profile</div>
-      <div style="font-size:14px;color:var(--app-on-surface-variant);opacity:0.7;" data-i18n="tabProfileDesc">Chọn một profile phù hợp với nhu cầu sử dụng của bạn.</div>
+  <header>
+    <div class="header-title">
+      <span class="material-symbols-outlined">tune</span>
+      KTweak
     </div>
+    <button class="icon-button" id="btn-language" aria-label="Change Language">
+      <span class="material-symbols-outlined">translate</span>
+    </button>
+  </header>
 
-    <div class="profile-grid" id="profileGrid">
-      <div class="profile-card" data-profile="budget">
-        <span class="material-symbols-outlined icon">battery_saver</span>
-        <div class="name" data-i18n="profileBudget">Budget</div>
-        <div class="desc" data-i18n="profileBudgetDesc">Tiết kiệm pin, thiết bị yếu</div>
-        <span class="material-symbols-outlined check">check_circle</span>
+  <div class="main">
+
+    <!-- Tab 1: Profile -->
+    <div id="tab-profile" class="tab-content active">
+      <div class="section-title">Chọn Profile</div>
+      <div class="section-desc">Chọn một profile phù hợp với nhu cầu sử dụng của bạn.</div>
+
+      <div class="profile-grid" id="profileGrid">
+        <div class="profile-card" data-profile="budget">
+          <div class="material-symbols-outlined icon">battery_saver</div>
+          <div class="name">Budget</div>
+          <div class="desc">Tiết kiệm pin, thiết bị yếu</div>
+          <span class="material-symbols-outlined check">check_circle</span>
+        </div>
+        <div class="profile-card" data-profile="latency">
+          <div class="material-symbols-outlined icon">speed</div>
+          <div class="name">Latency</div>
+          <div class="desc">Độ trễ thấp, phản hồi nhanh</div>
+          <span class="material-symbols-outlined check">check_circle</span>
+        </div>
+        <div class="profile-card" data-profile="throughput">
+          <div class="material-symbols-outlined icon">rocket_launch</div>
+          <div class="name">Throughput</div>
+          <div class="desc">Thông lượng cao</div>
+          <span class="material-symbols-outlined check">check_circle</span>
+        </div>
+        <div class="profile-card" data-profile="balance">
+          <div class="material-symbols-outlined icon">balance</div>
+          <div class="name">Balance</div>
+          <div class="desc">Cân bằng</div>
+          <span class="material-symbols-outlined check">check_circle</span>
+        </div>
       </div>
-      <div class="profile-card" data-profile="latency">
-        <span class="material-symbols-outlined icon">speed</span>
-        <div class="name" data-i18n="profileLatency">Latency</div>
-        <div class="desc" data-i18n="profileLatencyDesc">Độ trễ thấp, phản hồi nhanh</div>
-        <span class="material-symbols-outlined check">check_circle</span>
+
+      <button class="apply-btn" id="applyBtn">Áp dụng Profile</button>
+    </div>
+
+    <!-- Tab 2: Output -->
+    <div id="tab-output" class="tab-content">
+      <div class="output-header">
+        <div class="section-title" style="margin:0;">Output</div>
+        <button class="clear-log-btn" id="clearLogBtn">Xóa log</button>
       </div>
-      <div class="profile-card" data-profile="throughput">
-        <span class="material-symbols-outlined icon">rocket_launch</span>
-        <div class="name" data-i18n="profileThroughput">Throughput</div>
-        <div class="desc" data-i18n="profileThroughputDesc">Thông lượng cao</div>
-        <span class="material-symbols-outlined check">check_circle</span>
-      </div>
-      <div class="profile-card" data-profile="balance">
-        <span class="material-symbols-outlined icon">balance</span>
-        <div class="name" data-i18n="profileBalance">Balance</div>
-        <div class="desc" data-i18n="profileBalanceDesc">Cân bằng</div>
-        <span class="material-symbols-outlined check">check_circle</span>
+      <div class="output-box" id="outputBox">
+        <div class="log-line info">Chưa có log. Hãy áp dụng một profile.</div>
       </div>
     </div>
 
-    <button class="apply-btn" id="applyBtn" data-i18n="applyBtn">Áp dụng Profile</button>
   </div>
 
-  <!-- Tab 2: Output -->
-  <div id="tab-output" class="tab-content">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;">
-      <div style="font-size:20px;font-weight:700;" data-i18n="tabOutputTitle">Output</div>
-      <button class="clear-log-btn" id="clearLogBtn" data-i18n="clearLog">Xóa log</button>
-    </div>
-    <div class="output-box" id="outputBox">
-      <div class="log-line info">Chưa có log. Hãy áp dụng một profile.</div>
-    </div>
-  </div>
-</div>
+  <!-- Bottom Navigation -->
+  <nav class="bottom-navigation" id="bottomNav">
+    <button class="nav-button active" data-target="profile">
+      <span class="material-symbols-outlined nav-icon">tune</span>
+      <span class="nav-label">Profile</span>
+    </button>
+    <button class="nav-button" data-target="output">
+      <span class="material-symbols-outlined nav-icon">terminal</span>
+      <span class="nav-label">Output</span>
+    </button>
+  </nav>
 
-<!-- Bottom Navigation -->
-<nav class="bottom-navigation" id="bottomNav">
-  <button class="nav-button active" data-target="profile">
-    <span class="material-symbols-outlined nav-icon">tune</span>
-    <span class="nav-label" data-i18n="navProfile">Profile</span>
-  </button>
-  <button class="nav-button" data-target="output">
-    <span class="material-symbols-outlined nav-icon">terminal</span>
-    <span class="nav-label" data-i18n="navOutput">Output</span>
-  </button>
-</nav>
+  <!-- Loading -->
+  <div id="loading-overlay">Loading...</div>
 
-<!-- Loading -->
-<div id="loading-overlay">Loading...</div>
-
-<!-- Language Dialog -->
-<div class="dialog-scrim" id="languageDialog" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);z-index:2000;align-items:center;justify-content:center;">
-  <div style="background:var(--app-surface);border-radius:28px;padding:24px;max-width:320px;width:85%;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h3 data-i18n="langTitle">Chọn ngôn ngữ</h3>
-      <button id="closeLangDialog" style="background:none;border:none;color:var(--app-on-surface);cursor:pointer;font-size:24px;">✕</button>
-    </div>
-    <div id="langList">
-      <div class="lang-option" data-lang="vi" style="padding:12px;border-radius:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">Tiếng Việt <span class="check-icon" style="display:none;">✓</span></div>
-      <div class="lang-option" data-lang="en" style="padding:12px;border-radius:12px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">English <span class="check-icon" style="display:none;">✓</span></div>
+  <!-- Language Dialog -->
+  <div class="dialog-scrim" id="languageDialog">
+    <div class="dialog-container">
+      <div class="dialog-header">
+        <div class="dialog-title">Chọn ngôn ngữ</div>
+        <button class="dialog-close" id="closeLangDialog">✕</button>
+      </div>
+      <div class="lang-option" data-lang="vi">
+        <span>Tiếng Việt</span>
+        <span class="check-icon">✓</span>
+      </div>
+      <div class="lang-option" data-lang="en">
+        <span>English</span>
+        <span class="check-icon">✓</span>
+      </div>
     </div>
   </div>
-</div>
 
-<script type="module">
-// ============================================================
-// KTweak WebUI – Full logic (sửa tìm binary)
-// ============================================================
-import { exec as ksuExec, toast } from 'kernelsu';
+  <script type="module">
+    // ============================================================
+    // KTweak WebUI - Full Logic
+    // ============================================================
+    import { exec as ksuExec, toast } from 'kernelsu';
 
-const LOG_FILE = '/data/local/tmp/KernelTuner.log';
-const CURRENT_PROFILE_FILE = '/data/local/tmp/current_ktweak_profile';
-const MODULE_PATH_FILE = '/data/local/tmp/ktweak_module_path';
+    const CURRENT_PROFILE_FILE = '/data/local/tmp/current_ktweak_profile';
+    const MODULE_PATH_FILE = '/data/local/tmp/ktweak_module_path';
 
-// --- exec helper ---
-async function exec(cmd) {
-    try {
+    // --- DOM ---
+    const profileCards = document.querySelectorAll('.profile-card');
+    const applyBtn = document.getElementById('applyBtn');
+    const outputBox = document.getElementById('outputBox');
+    const clearLogBtn = document.getElementById('clearLogBtn');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const langDialog = document.getElementById('languageDialog');
+    const langOptions = document.querySelectorAll('.lang-option');
+    const btnLang = document.getElementById('btn-language');
+    const closeLang = document.getElementById('closeLangDialog');
+
+    let currentProfile = 'budget';
+    let translations = {};
+
+    // --- exec helper ---
+    async function exec(cmd) {
+      try {
         const { errno, stdout, stderr } = await ksuExec(cmd);
         if (errno !== 0) throw new Error(stderr || `Exit ${errno}`);
         return stdout.trim();
-    } catch (e) {
+      } catch (e) {
         throw e;
+      }
     }
-}
 
-// --- Lấy module path ---
-async function getModulePath() {
-    try {
+    // --- Log ---
+    function addLogLine(message, type = 'info') {
+      const line = document.createElement('div');
+      line.className = `log-line ${type}`;
+      const time = new Date().toLocaleTimeString();
+      line.textContent = `[${time}] ${message}`;
+      outputBox.appendChild(line);
+      outputBox.scrollTop = outputBox.scrollHeight;
+    }
+
+    function clearLog() {
+      outputBox.innerHTML = '';
+      addLogLine('Log đã được xóa', 'info');
+    }
+
+    // --- Get module path ---
+    async function getModulePath() {
+      try {
         const path = await exec(`cat ${MODULE_PATH_FILE} 2>/dev/null`);
         if (path) return path.trim();
-    } catch(e) {}
-    // Fallback: tìm thủ công
-    try {
-        const result = await exec('ls -d /data/adb/modules/*/system/bin/ktweak 2>/dev/null | head -n1');
-        if (result) {
-            return result.replace(/\/system\/bin\/ktweak$/, '');
-        }
-    } catch(e) {}
-    return '/data/adb/modules/KTweak'; // default
-}
-
-// --- Tìm binary cho profile ---
-async function findBinary(profile) {
-    const modPath = await getModulePath();
-    // Lấy architecture suffix
-    const arch = await exec('getprop ro.product.cpu.abi');
-    let suffix = '';
-    if (arch.includes('arm64')) suffix = '_64';
-    else if (arch.includes('armeabi')) suffix = '_32';
-    else if (arch.includes('x86_64')) suffix = '_x64';
-    else if (arch.includes('x86')) suffix = '_x86';
-    else {
-        // fallback: thử từng cái
-        try {
-            await exec(`test -f ${modPath}/system/bin/ktweak_${profile}_64`);
-            suffix = '_64';
-        } catch(e) {
-            try {
-                await exec(`test -f ${modPath}/system/bin/ktweak_${profile}_32`);
-                suffix = '_32';
-            } catch(e2) {
-                suffix = '_64';
-            }
-        }
+      } catch (e) {}
+      // Fallback
+      try {
+        const result = await exec('ls -d /data/adb/modules/KTweak 2>/dev/null');
+        if (result) return result.trim();
+      } catch (e) {}
+      return '/data/adb/modules/KTweak';
     }
-    const binName = `ktweak_${profile}${suffix}`;
-    const fullPath = `${modPath}/system/bin/${binName}`;
-    // Kiểm tra tồn tại
-    await exec(`test -f ${fullPath}`);
-    return fullPath;
-}
 
-// --- Apply profile ---
-async function applyProfile(profile) {
-    addLogLine(`Đang áp dụng profile: ${profile}`, 'info');
-    applyBtn.disabled = true;
-    applyBtn.textContent = 'Đang áp dụng...';
+    // --- Find binary ---
+    async function findBinary(profile) {
+      const modPath = await getModulePath();
+      const arch = await exec('getprop ro.product.cpu.abi');
+      let suffix = '';
+      if (arch.includes('arm64')) suffix = '_64';
+      else if (arch.includes('armeabi')) suffix = '_32';
+      else if (arch.includes('x86_64')) suffix = '_x64';
+      else if (arch.includes('x86')) suffix = '_x86';
+      else suffix = '_64';
 
-    try {
+      const binName = `ktweak_${profile}${suffix}`;
+      const fullPath = `${modPath}/system/bin/${binName}`;
+      await exec(`test -f ${fullPath}`);
+      return fullPath;
+    }
+
+    // --- Load current profile ---
+    async function loadCurrentProfile() {
+      try {
+        const content = await exec(`cat ${CURRENT_PROFILE_FILE} 2>/dev/null`);
+        if (content) {
+          currentProfile = content.trim();
+          updateUI(currentProfile);
+        }
+      } catch (e) {
+        currentProfile = 'budget';
+        await exec(`echo "budget" > ${CURRENT_PROFILE_FILE}`);
+      }
+      updateUI(currentProfile);
+    }
+
+    function updateUI(profile) {
+      profileCards.forEach(card => {
+        card.classList.toggle('selected', card.dataset.profile === profile);
+      });
+    }
+
+    // --- Apply profile ---
+    async function applyProfile(profile) {
+      addLogLine(`Đang áp dụng profile: ${profile}`, 'info');
+      applyBtn.disabled = true;
+      applyBtn.textContent = 'Đang áp dụng...';
+
+      try {
         const binPath = await findBinary(profile);
-        // Chạy binary
+        await exec(`chmod 755 ${binPath}`);
         const result = await exec(binPath);
         addLogLine(`✅ Profile ${profile} đã được áp dụng!`, 'success');
         if (result) addLogLine(`Output: ${result}`, 'info');
 
-        // Lưu profile hiện tại
         await exec(`echo "${profile}" > ${CURRENT_PROFILE_FILE}`);
         currentProfile = profile;
         updateUI(profile);
 
-    } catch (e) {
+      } catch (e) {
         addLogLine(`❌ Lỗi: ${e.message}`, 'error');
         console.error(e);
-    } finally {
+      } finally {
         applyBtn.disabled = false;
-        applyBtn.textContent = translations['applyBtn'] || 'Áp dụng Profile';
+        applyBtn.textContent = 'Áp dụng Profile';
+      }
     }
-}
-</script>
+
+    // --- Tab navigation ---
+    function showTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-button').forEach(el => el.classList.remove('active'));
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      document.querySelector(`.nav-button[data-target="${tabId}"]`).classList.add('active');
+    }
+
+    // --- Language ---
+    async function loadLanguage(lang) {
+      try {
+        const resp = await fetch(`assets/lang/${lang}.json`);
+        if (!resp.ok) throw new Error('Lang file not found');
+        translations = await resp.json();
+        localStorage.setItem('ktweak_lang', lang);
+        applyTranslations();
+        langOptions.forEach(el => {
+          el.classList.toggle('selected', el.dataset.lang === lang);
+          const check = el.querySelector('.check-icon');
+          if (check) check.style.display = el.dataset.lang === lang ? 'inline' : 'none';
+        });
+      } catch (e) {
+        console.error('Failed to load language', lang, e);
+        if (lang !== 'en') loadLanguage('en');
+      }
+    }
+
+    function applyTranslations() {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[key]) el.innerHTML = translations[key];
+      });
+    }
+
+    function initLanguage() {
+      const savedLang = localStorage.getItem('ktweak_lang') || 'vi';
+      loadLanguage(savedLang);
+
+      btnLang.addEventListener('click', () => {
+        langDialog.classList.add('active');
+      });
+      closeLang.addEventListener('click', () => {
+        langDialog.classList.remove('active');
+      });
+      langDialog.addEventListener('click', (e) => {
+        if (e.target === langDialog) langDialog.classList.remove('active');
+      });
+      langOptions.forEach(opt => {
+        opt.addEventListener('click', () => {
+          loadLanguage(opt.dataset.lang);
+          langDialog.classList.remove('active');
+        });
+      });
+    }
+
+    // --- Init ---
+    async function init() {
+      initLanguage();
+
+      // Profile card click
+      profileCards.forEach(card => {
+        card.addEventListener('click', () => {
+          currentProfile = card.dataset.profile;
+          updateUI(currentProfile);
+        });
+      });
+
+      // Apply button
+      applyBtn.addEventListener('click', async () => {
+        await applyProfile(currentProfile);
+      });
+
+      // Clear log
+      clearLogBtn.addEventListener('click', clearLog);
+
+      // Bottom nav
+      document.querySelectorAll('.nav-button').forEach(btn => {
+        btn.addEventListener('click', () => {
+          showTab(btn.dataset.target);
+        });
+      });
+
+      // Load current profile
+      await loadCurrentProfile();
+
+      // Initial log
+      addLogLine('KTweak WebUI sẵn sàng', 'info');
+      addLogLine(`Profile hiện tại: ${currentProfile}`, 'info');
+
+      // Hide loading
+      loadingOverlay.style.opacity = '0';
+      setTimeout(() => loadingOverlay.remove(), 300);
+    }
+
+    // Start
+    init();
+  </script>
 
 </body>
 </html>
