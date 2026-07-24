@@ -76,6 +76,12 @@ if [ -d "$MODPATH/webroot" ]; then
     ui_print " WebUI installed"
 fi
 
+# Copy GIF animation (nếu có)
+if [ -f "$MODPATH/webroot/assets/banner.gif" ]; then
+    chmod 644 "$MODPATH/webroot/assets/banner.gif"
+    ui_print " GIF animation installed"
+fi
+
 # Set permissions for scripts
 set_perm "$MODPATH/service.sh" 0 0 0755
 set_perm "$MODPATH/action.sh" 0 0 0755
