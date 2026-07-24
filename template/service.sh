@@ -9,17 +9,20 @@ done
 
 sleep 10
 
-# Kiểm tra xem có kernel_tuner không
-if [ -f "$MODPATH/system/bin/kernel_tuner" ]; then
-    "$MODPATH/system/bin/kernel_tuner" > /dev/null 2>&1 &
-else
-    # Nếu không có, tìm binary đầu tiên
-    for profile in budget latency throughput balance; do
-        for suffix in _64 _32 _x64 _x86; do
-            if [ -f "$MODPATH/system/bin/tuner_${profile}${suffix}" ]; then
-                "$MODPATH/system/bin/tuner_${profile}${suffix}" > /dev/null 2>&1 &
-                break 2
-            fi
-        done
-    done
+# Check current profile
+PROFILE=$(cat /data/local/tmp/current_ktweak_profile 2>/dev/null)
+if [ -z "$PROFILE" ]; then
+    PROFILE="budget"
+    echo "$PROFILE" > /data/local/tmp/current_ktweak_profile
 fi
+
+# Run corresponding binary
+BIN="$MODDIR/system/bin/ktweak_${PROFILE}"
+if [ -f "$BIN" ]; then
+    "$BIN" > /dev/null 2>&1 &
+else
+    # Fallback to main ktweak
+    "$MODDIR/system/bin/ktweak" > /dev/null 2>&1 &
+fi
+
+echo "KTweak service started at $(date)" > /data/local/tmp/ktweak_service.log

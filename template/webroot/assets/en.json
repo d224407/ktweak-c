@@ -1,0 +1,18 @@
+{
+  "tabProfileTitle": "Select Profile",
+  "tabProfileDesc": "Choose a profile that fits your usage.",
+  "profileBudget": "Budget",
+  "profileBudgetDesc": "Power saving, low-end devices",
+  "profileLatency": "Latency",
+  "profileLatencyDesc": "Low latency, fast response",
+  "profileThroughput": "Throughput",
+  "profileThroughputDesc": "High throughput",
+  "profileBalance": "Balance",
+  "profileBalanceDesc": "Balanced",
+  "applyBtn": "Apply Profile",
+  "tabOutputTitle": "Output",
+  "clearLog": "Clear log",
+  "navProfile": "Profile",
+  "navOutput": "Output",
+  "langTitle": "Select Language"
+}

@@ -1,0 +1,18 @@
+{
+  "tabProfileTitle": "Chọn Profile",
+  "tabProfileDesc": "Chọn một profile phù hợp với nhu cầu sử dụng của bạn.",
+  "profileBudget": "Budget",
+  "profileBudgetDesc": "Tiết kiệm pin, thiết bị yếu",
+  "profileLatency": "Latency",
+  "profileLatencyDesc": "Độ trễ thấp, phản hồi nhanh",
+  "profileThroughput": "Throughput",
+  "profileThroughputDesc": "Thông lượng cao",
+  "profileBalance": "Balance",
+  "profileBalanceDesc": "Cân bằng",
+  "applyBtn": "Áp dụng Profile",
+  "tabOutputTitle": "Output",
+  "clearLog": "Xóa log",
+  "navProfile": "Profile",
+  "navOutput": "Output",
+  "langTitle": "Chọn ngôn ngữ"
+}

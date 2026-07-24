@@ -1,7 +1,7 @@
 #!/system/bin/sh
 
-# Clean up
+rm -f /data/local/tmp/current_ktweak_profile
+rm -f /data/local/tmp/ktweak_service.log
 rm -f /data/local/tmp/KernelTuner.log
-rm -f /data/local/tmp/kernel_tuner.log
 
-echo "Kernel Tuner uninstalled at $(date)" > /data/local/tmp/kernel_tuner_uninstall.log
+echo "KTweak uninstalled at $(date)" > /data/local/tmp/ktweak_uninstall.log
