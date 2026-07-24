@@ -4,32 +4,42 @@ SKIPUNZIP=0
 
 ui_print() { echo "$1"; }
 
-# Hàm chờ người dùng bấm phím âm lượng
+# Hàm chờ phím âm lượng (dùng getevent hoặc dd)
 wait_volume_key() {
     local timeout=30
     local key=""
     
-    ui_print "  Vui lòng dùng phím âm lượng để chọn:"
-    ui_print "  [Volume +] = Chọn  |  [Volume -] = Di chuyển"
-    ui_print ""
+    # Thử dùng getevent trước (nếu có)
+    if command -v getevent >/dev/null 2>&1; then
+        # Tìm thiết bị input hỗ trợ KEY_VOLUME
+        local dev=""
+        for d in /dev/input/event*; do
+            if getevent -p "$d" 2>/dev/null | grep -q "KEY_VOLUME"; then
+                dev="$d"
+                break
+            fi
+        done
+        if [ -n "$dev" ]; then
+            local result=$(timeout 1 getevent -c 1 "$dev" 2>/dev/null | awk '{print $3}')
+            case "$result" in
+                "00000073") echo "up" ; return ;;
+                "00000072") echo "down" ; return ;;
+            esac
+        fi
+    fi
     
-    # Đọc sự kiện phím từ /dev/input/event*
+    # Fallback: đọc từ /dev/input/event*
     while [ $timeout -gt 0 ]; do
-        # Tìm thiết bị input
         for ev in /dev/input/event*; do
             if [ -r "$ev" ]; then
-                # Đọc sự kiện trong 0.2 giây
                 local input=$(timeout 0.2 dd if="$ev" bs=32 count=1 2>/dev/null | hexdump -ve '1/1 "%02x "')
                 if [ -n "$input" ]; then
-                    # Volume Up (key 115) hoặc Volume Down (key 114)
                     if echo "$input" | grep -q "73 00 00 00 01 00 04 00 01 00 00 00"; then
-                        # KEY_VOLUMEUP = 115
                         echo "up"
-                        return 0
+                        return
                     elif echo "$input" | grep -q "72 00 00 00 01 00 04 00 01 00 00 00"; then
-                        # KEY_VOLUMEDOWN = 114
                         echo "down"
-                        return 0
+                        return
                     fi
                 fi
             fi
@@ -38,21 +48,18 @@ wait_volume_key() {
         timeout=$((timeout - 1))
     done
     
-    # Timeout -> chọn mặc định (Budget)
     echo "timeout"
-    return 0
 }
 
-# Hàm hiển thị menu và chọn profile
+# Hàm chọn profile
 select_profile() {
     local profiles="budget latency throughput balance"
-    local names=("Budget - Tiết kiệm pin, thiết bị yếu" 
-                 "Latency - Ưu tiên độ trễ thấp" 
-                 "Throughput - Ưu tiên thông lượng cao" 
-                 "Balance - Cân bằng")
+    local names="Budget - Tiết kiệm pin|Latency - Độ trễ thấp|Throughput - Thông lượng cao|Balance - Cân bằng"
     local current=0
     local max=3
     local selected=""
+    local idx=0
+    local name=""
     
     while true; do
         clear 2>/dev/null || echo ""
@@ -61,12 +68,15 @@ select_profile() {
         ui_print "======================================"
         ui_print ""
         
-        for i in 0 1 2 3; do
-            if [ $i -eq $current ]; then
-                ui_print "  👉 ${names[$i]}"
+        idx=0
+        for p in $profiles; do
+            name=$(echo "$names" | cut -d'|' -f$((idx+1)))
+            if [ $idx -eq $current ]; then
+                ui_print "  👉 $name"
             else
-                ui_print "     ${names[$i]}"
+                ui_print "     $name"
             fi
+            idx=$((idx + 1))
         done
         
         ui_print ""
@@ -78,10 +88,7 @@ select_profile() {
         
         case "$key" in
             "up")
-                # Volume Up = Chọn profile hiện tại
-                selected="${profiles##* }"
-                # Lấy profile tại vị trí current
-                local idx=0
+                idx=0
                 for p in $profiles; do
                     if [ $idx -eq $current ]; then
                         selected="$p"
@@ -92,14 +99,12 @@ select_profile() {
                 break
                 ;;
             "down")
-                # Volume Down = Di chuyển xuống
                 current=$((current + 1))
                 if [ $current -gt $max ]; then
                     current=0
                 fi
                 ;;
             "timeout")
-                # Timeout -> chọn Budget
                 selected="budget"
                 ui_print ""
                 ui_print "⏱️  Timeout! Chọn mặc định: Budget"
@@ -117,7 +122,6 @@ ui_print "       KERNEL TUNER - 4 PROFILES      "
 ui_print "======================================"
 ui_print ""
 
-# Chọn profile
 PROFILE=$(select_profile)
 
 ui_print ""

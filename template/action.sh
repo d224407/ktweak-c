@@ -5,10 +5,27 @@ LOG_FILE="/data/local/tmp/kernel_tuner.log"
 
 ui_print() { echo "$1"; }
 
-# Hàm chờ phím âm lượng (giống trong customize.sh)
+# Hàm chờ phím âm lượng (giống customize.sh)
 wait_volume_key() {
     local timeout=30
     local key=""
+    
+    if command -v getevent >/dev/null 2>&1; then
+        local dev=""
+        for d in /dev/input/event*; do
+            if getevent -p "$d" 2>/dev/null | grep -q "KEY_VOLUME"; then
+                dev="$d"
+                break
+            fi
+        done
+        if [ -n "$dev" ]; then
+            local result=$(timeout 1 getevent -c 1 "$dev" 2>/dev/null | awk '{print $3}')
+            case "$result" in
+                "00000073") echo "up" ; return ;;
+                "00000072") echo "down" ; return ;;
+            esac
+        fi
+    fi
     
     while [ $timeout -gt 0 ]; do
         for ev in /dev/input/event*; do
@@ -17,10 +34,10 @@ wait_volume_key() {
                 if [ -n "$input" ]; then
                     if echo "$input" | grep -q "73 00 00 00 01 00 04 00 01 00 00 00"; then
                         echo "up"
-                        return 0
+                        return
                     elif echo "$input" | grep -q "72 00 00 00 01 00 04 00 01 00 00 00"; then
                         echo "down"
-                        return 0
+                        return
                     fi
                 fi
             fi
@@ -30,7 +47,6 @@ wait_volume_key() {
     done
     
     echo "timeout"
-    return 0
 }
 
 # Hàm áp dụng profile
@@ -43,12 +59,17 @@ apply_profile() {
         arm64-v8a|arm64) suffix="_64" ;;
         armeabi-v7a|armeabi) suffix="_32" ;;
         x86_64) suffix="_x64" ;;
-        x86|i686|i586|i486|i386) suffix="_x86" ;;
+        x86|i686) suffix="_x86" ;;
         *)
-            [ -f "$MODPATH/system/bin/tuner_${profile}_64" ] && suffix="_64"
-            [ -f "$MODPATH/system/bin/tuner_${profile}_32" ] && suffix="_32"
-            [ -f "$MODPATH/system/bin/tuner_${profile}_x64" ] && suffix="_x64"
-            [ -f "$MODPATH/system/bin/tuner_${profile}_x86" ] && suffix="_x86"
+            if [ -f "$MODPATH/system/bin/tuner_${profile}_64" ]; then
+                suffix="_64"
+            elif [ -f "$MODPATH/system/bin/tuner_${profile}_32" ]; then
+                suffix="_32"
+            elif [ -f "$MODPATH/system/bin/tuner_${profile}_x64" ]; then
+                suffix="_x64"
+            else
+                suffix="_x86"
+            fi
             ;;
     esac
     
@@ -75,16 +96,15 @@ apply_profile() {
     fi
 }
 
-# Hàm chọn profile bằng phím âm lượng
+# Hàm chọn profile
 select_profile() {
     local profiles="budget latency throughput balance"
-    local names=("Budget - Tiết kiệm pin, thiết bị yếu" 
-                 "Latency - Ưu tiên độ trễ thấp" 
-                 "Throughput - Ưu tiên thông lượng cao" 
-                 "Balance - Cân bằng")
+    local names="Budget - Tiết kiệm pin|Latency - Độ trễ thấp|Throughput - Thông lượng cao|Balance - Cân bằng"
     local current=0
     local max=3
     local selected=""
+    local idx=0
+    local name=""
     
     while true; do
         clear 2>/dev/null || echo ""
@@ -94,12 +114,15 @@ select_profile() {
         ui_print " Profile hiện tại: $(cat /data/local/tmp/current_profile 2>/dev/null || echo 'Chưa chọn')"
         ui_print ""
         
-        for i in 0 1 2 3; do
-            if [ $i -eq $current ]; then
-                ui_print "  👉 ${names[$i]}"
+        idx=0
+        for p in $profiles; do
+            name=$(echo "$names" | cut -d'|' -f$((idx+1)))
+            if [ $idx -eq $current ]; then
+                ui_print "  👉 $name"
             else
-                ui_print "     ${names[$i]}"
+                ui_print "     $name"
             fi
+            idx=$((idx + 1))
         done
         
         ui_print ""
@@ -108,12 +131,11 @@ select_profile() {
         ui_print "  [Volume +] = Chọn  |  [Volume -] = Di chuyển"
         ui_print "======================================"
         
-        # Đọc phím bấm với timeout ngắn hơn để check phím 'q'
         local key=$(wait_volume_key)
         
         case "$key" in
             "up")
-                local idx=0
+                idx=0
                 for p in $profiles; do
                     if [ $idx -eq $current ]; then
                         selected="$p"
@@ -130,13 +152,12 @@ select_profile() {
                 fi
                 ;;
             "timeout")
-                # Timeout -> quay lại menu
                 continue
                 ;;
         esac
         
-        # Kiểm tra phím 'q' từ input (đọc thêm)
-        read -t 1 -r key_char 2>/dev/null
+        # Kiểm tra phím 'q' từ stdin
+        read -t 1 key_char 2>/dev/null
         if [ "$key_char" = "q" ] || [ "$key_char" = "Q" ]; then
             ui_print "Thoát!"
             exit 0
@@ -148,7 +169,6 @@ select_profile() {
 
 # Main
 main() {
-    # Nếu gọi với tham số profile
     if [ $# -gt 0 ]; then
         case "$1" in
             budget|latency|throughput|balance)
@@ -163,14 +183,13 @@ main() {
         esac
     fi
     
-    # Chạy menu tương tác
     while true; do
         PROFILE=$(select_profile)
         if [ -n "$PROFILE" ]; then
             apply_profile "$PROFILE"
             ui_print ""
             ui_print "Nhấn Enter để tiếp tục hoặc 'q' để thoát..."
-            read -t 3 -r key 2>/dev/null
+            read -t 3 key 2>/dev/null
             if [ "$key" = "q" ] || [ "$key" = "Q" ]; then
                 ui_print "Thoát!"
                 exit 0
