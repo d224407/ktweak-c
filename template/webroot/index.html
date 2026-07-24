@@ -602,15 +602,28 @@
         const path = await exec(`cat ${MODULE_PATH_FILE} 2>/dev/null`);
         if (path) return path.trim();
       } catch (e) {
-        // BUG FIX #2: Silent failure is OK for fallback
+        // Silent failure is OK for fallback
       }
-      // Fallback
-      try {
-        const result = await exec('ls -d /data/adb/modules/KTweak 2>/dev/null || echo "/data/adb/modules/KTweak"');
-        if (result) return result.trim();
-      } catch (e) {
-        // Return default
+
+      // Check common candidate locations in order. This fixes cases where the module
+      // may be installed under /data/adb/module, /data/adb/module_update, or the
+      // more common /data/adb/modules/KTweak path.
+      const candidates = [
+        '/data/adb/module/KTweak',
+        '/data/adb/module_update/KTweak',
+        '/data/adb/modules/KTweak'
+      ];
+
+      for (const c of candidates) {
+        try {
+          const res = await exec(`test -d ${c} && echo ${c} || true`);
+          if (res && res.trim()) return res.trim();
+        } catch (e) {
+          // ignore and try next
+        }
       }
+
+      // As a last resort, return the most common path
       return '/data/adb/modules/KTweak';
     }
 
