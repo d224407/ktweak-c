@@ -617,9 +617,9 @@
     async function getModulePath() {
       // Kiểm tra các vị trí có thể có module
       const candidates = [
-        '/data/adb/modules/KTweak',      // ưu tiên nhất
-        '/data/adb/module/KTweak',
-        '/data/adb/module_update/KTweak'
+        '/data/adb/modules/ktweak',      // ưu tiên nhất
+        '/data/adb/module/ktweak',
+        '/data/adb/module_update/ktweak'
       ];
       for (const c of candidates) {
         try {
@@ -630,7 +630,7 @@
         } catch (e) { /* ignore */ }
       }
       // Fallback
-      return '/data/adb/modules/KTweak';
+      return '/data/adb/modules/ktweak';
     }
 
     // --- Find binary ---
