@@ -1,4 +1,4 @@
-name: Build
+name: Build KTweak
 
 on:
   push:
@@ -23,15 +23,27 @@ jobs:
 
       - name: Build all profiles
         run: |
-          mkdir -p build/{armv7,armv8,x86,x86_64}
+          mkdir -p build/armv7 build/armv8 build/x86 build/x86_64
           NDK=${{ steps.setup-ndk.outputs.ndk-path }}
           
           for arch in armv7 armv8 x86 x86_64; do
             case $arch in
-              armv7)  CLANG="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang"; SUFFIX="_32" ;;
-              armv8)  CLANG="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"; SUFFIX="_64" ;;
-              x86)    CLANG="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android21-clang"; SUFFIX="_x86" ;;
-              x86_64) CLANG="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang"; SUFFIX="_x64" ;;
+              armv7)
+                CLANG="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang"
+                SUFFIX="_32"
+                ;;
+              armv8)
+                CLANG="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang"
+                SUFFIX="_64"
+                ;;
+              x86)
+                CLANG="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android21-clang"
+                SUFFIX="_x86"
+                ;;
+              x86_64)
+                CLANG="$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang"
+                SUFFIX="_x64"
+                ;;
             esac
             
             for profile in budget latency throughput balance; do

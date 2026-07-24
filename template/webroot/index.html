@@ -379,130 +379,44 @@
 
 <script type="module">
 // ============================================================
-// KTweak WebUI – Full logic
+// KTweak WebUI – Full logic (sửa tìm binary)
 // ============================================================
 import { exec as ksuExec, toast } from 'kernelsu';
 
 const LOG_FILE = '/data/local/tmp/KernelTuner.log';
 const CURRENT_PROFILE_FILE = '/data/local/tmp/current_ktweak_profile';
-const BIN_PREFIX = 'ktweak_';
-
-// --- DOM refs ---
-const profileCards = document.querySelectorAll('.profile-card');
-const applyBtn = document.getElementById('applyBtn');
-const outputBox = document.getElementById('outputBox');
-const clearLogBtn = document.getElementById('clearLogBtn');
-const loadingOverlay = document.getElementById('loading-overlay');
-const langDialog = document.getElementById('languageDialog');
-const langOptions = document.querySelectorAll('.lang-option');
-
-let currentProfile = 'budget';
-let translations = {};
-
-// --- i18n ---
-async function loadLanguage(lang) {
-  try {
-    const resp = await fetch(`assets/lang/${lang}.json`);
-    if (!resp.ok) throw new Error('Lang file not found');
-    translations = await resp.json();
-    localStorage.setItem('ktweak_lang', lang);
-    applyTranslations();
-    // Cập nhật selected trong dialog
-    document.querySelectorAll('.lang-option').forEach(el => {
-      el.classList.toggle('selected', el.dataset.lang === lang);
-      el.querySelector('.check-icon').style.display = el.dataset.lang === lang ? 'inline' : 'none';
-    });
-  } catch (e) {
-    console.error('Failed to load language', lang, e);
-    if (lang !== 'en') loadLanguage('en');
-  }
-}
-
-function applyTranslations() {
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (translations[key]) {
-      el.innerHTML = translations[key];
-    }
-  });
-}
-
-function initLanguage() {
-  const savedLang = localStorage.getItem('ktweak_lang') || 'vi';
-  loadLanguage(savedLang);
-
-  document.getElementById('btn-language').addEventListener('click', () => {
-    langDialog.style.display = 'flex';
-  });
-  document.getElementById('closeLangDialog').addEventListener('click', () => {
-    langDialog.style.display = 'none';
-  });
-  langDialog.addEventListener('click', (e) => {
-    if (e.target === langDialog) langDialog.style.display = 'none';
-  });
-  langOptions.forEach(opt => {
-    opt.addEventListener('click', () => {
-      loadLanguage(opt.dataset.lang);
-      langDialog.style.display = 'none';
-    });
-  });
-}
+const MODULE_PATH_FILE = '/data/local/tmp/ktweak_module_path';
 
 // --- exec helper ---
 async function exec(cmd) {
-  try {
-    const { errno, stdout, stderr } = await ksuExec(cmd);
-    if (errno !== 0) throw new Error(stderr || `Exit ${errno}`);
-    return stdout.trim();
-  } catch (e) {
-    throw e;
-  }
-}
-
-// --- Log output ---
-function addLogLine(message, type = 'info') {
-  const line = document.createElement('div');
-  line.className = `log-line ${type}`;
-  const time = new Date().toLocaleTimeString();
-  line.textContent = `[${time}] ${message}`;
-  outputBox.appendChild(line);
-  outputBox.scrollTop = outputBox.scrollHeight;
-}
-
-function clearLog() {
-  outputBox.innerHTML = '';
-  addLogLine('Log đã được xóa', 'info');
-}
-
-// --- Load current profile ---
-async function loadCurrentProfile() {
-  try {
-    const content = await exec(`cat ${CURRENT_PROFILE_FILE} 2>/dev/null`);
-    if (content) {
-      currentProfile = content.trim();
-      updateUI(currentProfile);
+    try {
+        const { errno, stdout, stderr } = await ksuExec(cmd);
+        if (errno !== 0) throw new Error(stderr || `Exit ${errno}`);
+        return stdout.trim();
+    } catch (e) {
+        throw e;
     }
-  } catch (e) {
-    // file not exist, default budget
-    currentProfile = 'budget';
-    await exec(`echo "budget" > ${CURRENT_PROFILE_FILE}`);
-  }
-  updateUI(currentProfile);
 }
 
-function updateUI(profile) {
-  profileCards.forEach(card => {
-    card.classList.toggle('selected', card.dataset.profile === profile);
-  });
+// --- Lấy module path ---
+async function getModulePath() {
+    try {
+        const path = await exec(`cat ${MODULE_PATH_FILE} 2>/dev/null`);
+        if (path) return path.trim();
+    } catch(e) {}
+    // Fallback: tìm thủ công
+    try {
+        const result = await exec('ls -d /data/adb/modules/*/system/bin/ktweak 2>/dev/null | head -n1');
+        if (result) {
+            return result.replace(/\/system\/bin\/ktweak$/, '');
+        }
+    } catch(e) {}
+    return '/data/adb/modules/KTweak'; // default
 }
 
-// --- Apply profile ---
-async function applyProfile(profile) {
-  addLogLine(`Đang áp dụng profile: ${profile}`, 'info');
-  applyBtn.disabled = true;
-  applyBtn.textContent = 'Đang áp dụng...';
-
-  try {
+// --- Tìm binary cho profile ---
+async function findBinary(profile) {
+    const modPath = await getModulePath();
     // Lấy architecture suffix
     const arch = await exec('getprop ro.product.cpu.abi');
     let suffix = '';
@@ -511,82 +425,52 @@ async function applyProfile(profile) {
     else if (arch.includes('x86_64')) suffix = '_x64';
     else if (arch.includes('x86')) suffix = '_x86';
     else {
-      // fallback: try 64 then 32
-      try { await exec(`test -f /system/bin/${BIN_PREFIX}${profile}_64`); suffix = '_64'; } catch(e) { suffix = '_32'; }
+        // fallback: thử từng cái
+        try {
+            await exec(`test -f ${modPath}/system/bin/ktweak_${profile}_64`);
+            suffix = '_64';
+        } catch(e) {
+            try {
+                await exec(`test -f ${modPath}/system/bin/ktweak_${profile}_32`);
+                suffix = '_32';
+            } catch(e2) {
+                suffix = '_64';
+            }
+        }
     }
-
-    const bin = `/system/bin/${BIN_PREFIX}${profile}${suffix}`;
+    const binName = `ktweak_${profile}${suffix}`;
+    const fullPath = `${modPath}/system/bin/${binName}`;
     // Kiểm tra tồn tại
-    await exec(`test -f ${bin}`);
-
-    // Chạy binary
-    const result = await exec(bin);
-    addLogLine(`✅ Profile ${profile} đã được áp dụng!`, 'success');
-    addLogLine(`Output: ${result || '(không có output)'}`, 'info');
-
-    // Lưu profile hiện tại
-    await exec(`echo "${profile}" > ${CURRENT_PROFILE_FILE}`);
-    currentProfile = profile;
-    updateUI(profile);
-
-  } catch (e) {
-    addLogLine(`❌ Lỗi: ${e.message}`, 'error');
-  } finally {
-    applyBtn.disabled = false;
-    applyBtn.textContent = translations['applyBtn'] || 'Áp dụng Profile';
-  }
+    await exec(`test -f ${fullPath}`);
+    return fullPath;
 }
 
-// --- Tab navigation ---
-function showTab(tabId) {
-  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-  document.querySelectorAll('.nav-button').forEach(el => el.classList.remove('active'));
-  document.getElementById(`tab-${tabId}`).classList.add('active');
-  document.querySelector(`.nav-button[data-target="${tabId}"]`).classList.add('active');
+// --- Apply profile ---
+async function applyProfile(profile) {
+    addLogLine(`Đang áp dụng profile: ${profile}`, 'info');
+    applyBtn.disabled = true;
+    applyBtn.textContent = 'Đang áp dụng...';
+
+    try {
+        const binPath = await findBinary(profile);
+        // Chạy binary
+        const result = await exec(binPath);
+        addLogLine(`✅ Profile ${profile} đã được áp dụng!`, 'success');
+        if (result) addLogLine(`Output: ${result}`, 'info');
+
+        // Lưu profile hiện tại
+        await exec(`echo "${profile}" > ${CURRENT_PROFILE_FILE}`);
+        currentProfile = profile;
+        updateUI(profile);
+
+    } catch (e) {
+        addLogLine(`❌ Lỗi: ${e.message}`, 'error');
+        console.error(e);
+    } finally {
+        applyBtn.disabled = false;
+        applyBtn.textContent = translations['applyBtn'] || 'Áp dụng Profile';
+    }
 }
-
-// --- Init ---
-async function init() {
-  initLanguage();
-
-  // Profile card click
-  profileCards.forEach(card => {
-    card.addEventListener('click', () => {
-      const profile = card.dataset.profile;
-      currentProfile = profile;
-      updateUI(profile);
-    });
-  });
-
-  // Apply button
-  applyBtn.addEventListener('click', async () => {
-    await applyProfile(currentProfile);
-  });
-
-  // Clear log
-  clearLogBtn.addEventListener('click', clearLog);
-
-  // Bottom nav
-  document.querySelectorAll('.nav-button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      showTab(btn.dataset.target);
-    });
-  });
-
-  // Load current profile
-  await loadCurrentProfile();
-
-  // Add initial log
-  addLogLine('KTweak WebUI sẵn sàng', 'info');
-  addLogLine(`Profile hiện tại: ${currentProfile}`, 'info');
-
-  // Hide loading
-  loadingOverlay.style.opacity = '0';
-  setTimeout(() => loadingOverlay.remove(), 300);
-}
-
-// Khởi chạy
-init();
 </script>
 
 </body>

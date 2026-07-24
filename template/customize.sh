@@ -9,6 +9,10 @@ ui_print "       KTweak - Kernel Tuner          "
 ui_print "======================================"
 ui_print ""
 
+# Ghi module path để WebUI biết
+echo "$MODPATH" > /data/local/tmp/ktweak_module_path
+chmod 644 /data/local/tmp/ktweak_module_path
+
 # Detect architecture
 ARCH=$(getprop ro.product.cpu.abi)
 case "$ARCH" in
@@ -42,12 +46,21 @@ case "$ARCH" in
         ;;
 esac
 
-# Chọn profile mặc định là Budget khi cài đặt (người dùng có thể đổi qua WebUI sau)
-PROFILE="budget"
+# Set permissions for ALL binaries
+ui_print " Setting permissions for binaries..."
+for bin in $MODPATH/system/bin/ktweak_*; do
+    if [ -f "$bin" ]; then
+        chmod 755 "$bin"
+        ui_print "  $(basename "$bin") OK"
+    fi
+done
 
-# Copy binary
+# Chọn profile mặc định là Budget
+PROFILE="budget"
 BIN_NAME="ktweak_${PROFILE}${BIN_SUFFIX}"
+
 if [ -f "$MODPATH/system/bin/$BIN_NAME" ]; then
+    # Copy binary chính
     cp "$MODPATH/system/bin/$BIN_NAME" "$MODPATH/system/bin/ktweak"
     chmod 755 "$MODPATH/system/bin/ktweak"
     echo "$PROFILE" > /data/local/tmp/current_ktweak_profile
@@ -63,9 +76,7 @@ if [ -d "$MODPATH/webroot" ]; then
     ui_print " WebUI installed"
 fi
 
-# Set permissions
-set_perm_recursive "$MODPATH" 0 0 0755 0644
-set_perm "$MODPATH/system/bin/ktweak" 0 0 0755
+# Set permissions for scripts
 set_perm "$MODPATH/service.sh" 0 0 0755
 set_perm "$MODPATH/action.sh" 0 0 0755
 set_perm "$MODPATH/uninstall.sh" 0 0 0755
